@@ -1,0 +1,21 @@
+Gramática escrita
+
+<PROG>		    -> programa id; <DECLARACOES> inicio <COMANDOS> fim.
+<DECLARACOES>	->  var <IDS> : <TIPO> ; <DECLARACOES> | ε
+<TIPO>		    -> inteiro | logico
+<COMANDOS>	    -> <COMANDO> ; <COMANDOS> | ε
+<COMANDO>	    -> <ATRIBUICOES> | <LEITURA> | <ESCRITA> | <COMPOSTO> | <CONDICIONAL> | <REPETICÃO>
+<ATRIBUICOES>	-> id := <EXPR>
+<LEITURA>	    -> Ler(<IDS>)
+<ESCRITA>	    -> Escrever(<EXPR_STR>)
+<COMPOSTO>	    -> inicio <COMANDOS> fim
+<CONDICIONAL>	-> se <EXPR_LOGICA> entao <COMANDOS> se nao <COMANDOS> | se <exprLogica> entao <COMANDOS>
+<REPETICAO>	    -> enquanto <EXPR_LOGICA> faca <COMANDOS>
+<IDS>           -> id <_IDS>
+<_IDS>		    -> , id <_IDS> | ε
+<EXPR>          -> <VALUE> <_EXPR>
+<_EXPR>		    -> + <EXPR> | - <EXPR> | * <EXPR> | / <EXPR> | - <EXPR>
+<VALUE>         -> num | - num | (<EXPR>)
+<EXPR_LOGICA>   -> <EXPR> < <EXPR> | <EXPR> <= <EXPR> | <EXPR> > <EXPR> | <EXPR> >= <EXPR> | <EXPR> = <EXPR> | <EXPR> <> <EXPR> | id
+<EXPR_STR>      -> str <_EXPR_STR> | id <_EXPR_STR>
+<_EXPR_STR>     -> , str <EXPR_STR> | , id <_EXPR_STR> | ε
