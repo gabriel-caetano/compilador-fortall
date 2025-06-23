@@ -1,21 +1,27 @@
 Gramática escrita
 
-<PROG>		    -> programa id; <DECLARACOES> inicio <COMANDOS> fim.
-<DECLARACOES>	->  var <IDS> : <TIPO> ; <DECLARACOES> | ε
+<PROG>		    -> <COMENTARIO> programa id; <DECLARACOES> inicio <COMANDOS> fim . <COMENTARIO>
+<DECLARACOES>	-> <COMENTARIO> var <IDS> : <TIPO> ; <DECLARACOES> | <COMENTARIO>
 <TIPO>		    -> inteiro | logico
-<COMANDOS>	    -> <COMANDO> ; <COMANDOS> | ε
-<COMANDO>	    -> <ATRIBUICOES> | <LEITURA> | <ESCRITA> | <COMPOSTO> | <CONDICIONAL> | <REPETICÃO>
+<COMANDOS>	    -> <COMENTARIO> <COMANDO> ; <COMANDOS> | <COMENTARIO>
+<COMANDO>	    -> <ATRIBUICOES> | <LEITURA> | <ESCRITA> | <COMPOSTO> | <CONDICIONAL> | <REPETICAO>
 <ATRIBUICOES>	-> id := <EXPR>
-<LEITURA>	    -> Ler(<IDS>)
-<ESCRITA>	    -> Escrever(<EXPR_STR>)
+<LEITURA>	    -> Ler(id)
+<ESCRITA>       -> Escrever ( <ESPR_STR> )
+<ESPR_STR>      -> <ITEM_ESCRITA> <ESPR_STR_>
+<ESPR_STR_>     -> , <ITEM_ESCRITA> <ESPR_STR_> | ε
+<ITEM_ESCRITA>  -> <EXPR> | <EXPR_LOGICA> | str | id
 <COMPOSTO>	    -> inicio <COMANDOS> fim
-<CONDICIONAL>	-> se <EXPR_LOGICA> entao <COMANDOS> se nao <COMANDOS> | se <exprLogica> entao <COMANDOS>
+<CONDICIONAL>	-> se <EXPR_LOGICA> entao <COMANDOS> se nao <COMANDOS> | se <EXPR_LOGICA> entao <COMANDOS>
 <REPETICAO>	    -> enquanto <EXPR_LOGICA> faca <COMANDOS>
 <IDS>           -> id <_IDS>
 <_IDS>		    -> , id <_IDS> | ε
-<EXPR>          -> <VALUE> <_EXPR>
-<_EXPR>		    -> + <EXPR> | - <EXPR> | * <EXPR> | / <EXPR> | - <EXPR>
+<EXPR>          -> <TERMO> <_EXPR>
+<_EXPR>		    -> + <TERMO> <_EXPR> | - <TERMO> <_EXPR> | ε
+<TERMO>         -> <FATOR> <_TERMO>
+<_TERMO>        -> * <FATOR> <_TERMO> | / <FATOR> <_TERMO> | ε
+<FATOR>         -> - <FATOR> | <VALUE>
 <VALUE>         -> num | - num | (<EXPR>)
 <EXPR_LOGICA>   -> <EXPR> < <EXPR> | <EXPR> <= <EXPR> | <EXPR> > <EXPR> | <EXPR> >= <EXPR> | <EXPR> = <EXPR> | <EXPR> <> <EXPR> | id
-<EXPR_STR>      -> str <_EXPR_STR> | id <_EXPR_STR>
-<_EXPR_STR>     -> , str <EXPR_STR> | , id <_EXPR_STR> | ε
+<_COMENTARIO> -> /* <QUALQUER_COISA...> */
+<COMENTARIO>   -> <_COMENTARIO> <COMENTARIO> | ε
