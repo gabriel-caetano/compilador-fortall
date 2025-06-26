@@ -13,13 +13,15 @@ inicio
     Escrever("Resultado:", z, a, b);
     se x < y entao
         Escrever("x é menor que y");
-    se nao
+        inicio
+            y := y + 1;
+            Escrever("Loop interno", y);
+        fim;
+    senao
         Escrever("x não é menor que y");
+    fim;
     enquanto z > 0 faca
         z := z - 1;
-    inicio
-        y := y + 1;
-        Escrever("Loop interno", y);
-    fim
+    fim;
 fim.
 /* Fim do programa */
