@@ -2,7 +2,6 @@
 programa exemplo;
 var x, y, z: inteiro;
 var a, b: logico;
-
 inicio
     x := 10;
     y := -20;

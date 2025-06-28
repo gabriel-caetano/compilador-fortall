@@ -1,6 +1,6 @@
 import sys
 from lexical_analyzer import LexicalAnalyzer
-from sintax_analyzer import SintaxAnalyzer
+from syntax_analyzer import SyntaxAnalyzer
 
 def main():
     if len(sys.argv) < 2:
@@ -9,10 +9,9 @@ def main():
     filename = sys.argv[1]
     la = LexicalAnalyzer()
     tokens = la.tokenize_file(filename)
-    print("\nAnálise semântica:")
-    sa = SintaxAnalyzer()
+    # print(tokens)
+    sa = SyntaxAnalyzer()
     ast = sa.parse(tokens)
-    print("Análise semântica concluída.")
     
 
 if __name__ == "__main__":

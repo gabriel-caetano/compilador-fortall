@@ -1,28 +1,39 @@
 Gramática escrita
 
-<PROG>		    -> programa id; <DECLARACOES> inicio <COMANDOS> fim .
-<DECLARACOES>	-> var <IDS> : <TIPO> ; <DECLARACOES> | ε
+<PROG>		    -> programa id; <DECLARACOES> <COMPOSTO> .
+
+<DECLARACOES>	-> <DECLARACAO> <_DECLARACAO> | ε
+<DECLARACAO>    -> var <ID> <_ID> : <TIPO> ;
+<_DECLARACAO>   -> <DECLARACAO> <_DECLARACAO> | ε
 <TIPO>		    -> inteiro | logico
-<COMANDOS>	    -> <COMANDO> ; <COMANDOS> | ε
-<COMANDO>	    -> <ATRIBUICOES> | <LEITURA> | <ESCRITA> | <COMPOSTO> | <CONDICIONAL> | <REPETICAO>
-<ATRIBUICOES>	-> id := <EXPR>
-<LEITURA>	    -> Ler(<IDS>) 
-<ESCRITA>       -> Escrever ( <ESPR_STR> )
-<ESPR_STR>      -> <ITEM_ESCRITA> <ESPR_STR_>
-<ESPR_STR_>     -> , <ITEM_ESCRITA> <ESPR_STR_> | ε
-<ITEM_ESCRITA>  -> <EXPR> | <EXPR_LOGICA> | str | id
+<ID>            -> id <_ID>
+<_ID>		    -> , <ID> <_ID> | ε
+
 <COMPOSTO>	    -> inicio <COMANDOS> fim
+<COMANDOS>	    -> <COMANDO>; <_COMANDO> | ε
+<COMANDO>	    -> <ATRIBUICAO> | <LEITURA> | <ESCRITA> | <COMPOSTO> | <CONDICIONAL> | <REPETICAO>
+<_COMANDO>      -> <COMANDO>; <_COMANDO> | ε
+
+<ATRIBUICAO>	-> id := <EXPR> | id := <EXPR_LOGICA>
+<LEITURA>	    -> Ler(<ID><_ID>)
+<ESCRITA>       -> Escrever (<ESPR_STR>)
 <CONDICIONAL>	-> se <EXPR_LOGICA> entao <COMANDOS> senao <COMANDOS> fim | se <EXPR_LOGICA> entao <COMANDOS> fim
 <REPETICAO>	    -> enquanto <EXPR_LOGICA> faca <COMANDOS> fim
-<IDS>           -> id <_IDS>
-<_IDS>		    -> , id <_IDS> | ε
-<EXPR>          -> <TERMO> <EXPR_>
-<EXPR_>         -> + <TERMO> <EXPR_> | - <TERMO> <EXPR_> | ε
-<TERMO>         -> <FATOR> <TERMO_>
-<TERMO_>        -> * <FATOR> <TERMO_> | / <FATOR> <TERMO_> | ε
-<FATOR>         -> , <FATOR> | num | id | ( <EXPR> )
-<EXPR_LOGICA>   -> <TERMO_LOGICO> || <EXPR_LOGICA> | <TERMO_LOGICO>
-<TERMO_LOGICO>  -> <FATOR_LOGICO> && <TERMO_LOGICO> | <FATOR_LOGICO>
+
+<ESPR_STR>      -> <ITEM_ESCRITA> <_ITEM_ESCRITA> | ε
+<ITEM_ESCRITA>  -> <EXPR> | <EXPR_LOGICA> | str | id
+<_ITEM_ESCRITA> -> , <ITEM_ESCRITA> <_ITEM_ESCRITA> | ε
+
+<EXPR>          -> <TERMO> <_EXPR>
+<_EXPR>         -> + <TERMO> <_EXPR> | - <TERMO> <_EXPR> | ε
+<TERMO>         -> <FATOR> <_TERMO>
+<_TERMO>        -> * <FATOR> <_TERMO> | / <FATOR> <_TERMO> | ε
+<FATOR>         -> - <FATOR> | num | id | ( <EXPR> )
+
+<EXPR_LOGICA>   -> <TERMO_LOGICO> <_EXPR_LOGICA>
+<_EXPR_LOGICA>  -> || <TERMO_LOGICO> <_EXPR_LOGICA> | ε
+<TERMO_LOGICO>  -> <FATOR_LOGICO> <_TERMO_LOGICO>
+<_TERMO_LOGICO> -> && <FATOR_LOGICO> <_TERMO_LOGICO> | ε
 <FATOR_LOGICO>  -> ! <FATOR_LOGICO> | <RELACIONAL> | ( <EXPR_LOGICA> ) | id | bool
 <RELACIONAL>    -> <EXPR> <OP_REL> <EXPR>
 <OP_REL>        -> < | <= | > | >= | = | <>

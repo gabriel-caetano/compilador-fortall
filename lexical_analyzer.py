@@ -53,6 +53,7 @@ class LexicalAnalyzer:
 
     def t_STR(self, t):
         r'"([^\"]|\\\")*"'
+        t.value = t.value[1:-1]
         return t
 
     def t_NUM(self, t):
@@ -72,8 +73,7 @@ class LexicalAnalyzer:
 
     def t_newline(self, t):
         r'\n'
-        t.lexer.lineno += 1       
-        
+        t.lexer.lineno += 1
 
     def t_error(self, t):
         msg = f"Caractere ilegal: '{t.value[0]}' na linha {t.lineno}"
@@ -82,13 +82,12 @@ class LexicalAnalyzer:
         t.lexer.skip(1)
 
     def tokenize_file(self, filename):
-
         with open(filename, 'r', encoding='utf-8') as f:
             data = f.read()
         return self.tokenize(data)
 
     def tokenize(self, input_string):
-        print("Análise sintática:")
+        print("Análise léxica:")
         self.errors = []
         self.lexer.input(input_string)
         tokens_list = []
@@ -96,11 +95,8 @@ class LexicalAnalyzer:
             tok = self.lexer.token()
             if not tok:
                 break
-            # if tok == '\n':
-            #     tok.lineno += 1
-
             tokens_list.append(tok)
-        print("\nFim da análise sintática.")
+        print("Fim da análise léxica.")
         # for token in tokens_list:
         #     print(token)
         return tokens_list
