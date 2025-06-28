@@ -18,7 +18,7 @@ class SyntaxAnalyzer:
     def parse(self, tokens):
         print("Análise sintática:")
         ast = self.parser.parse(lexer=TokenListLexer(tokens))
-        print("Fim da análise sintática:")
+        print("Fim da análise sintática.")
         return ast
 
     # Precedência dos operadores
