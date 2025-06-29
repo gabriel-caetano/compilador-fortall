@@ -17,8 +17,8 @@ def main():
     ast = syntax.parse(tokens)
     # print(ast)
     semantic = SemanticAnalyzer()
-    execTree = semantic.analyze(ast)
-    # print(execTree)
+    dependence_tree = semantic.analyze(ast)
+    # print(dependence_tree)
     
 
 if __name__ == "__main__":
