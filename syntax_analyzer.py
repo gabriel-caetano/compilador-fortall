@@ -40,9 +40,10 @@ class SyntaxAnalyzer:
         '''DECLARACOES : DECLARACAO _DECLARACAO
                       | '''
         if len(p) == 3:
-            p[0] = ASTNode('DECLARACOES', [p[1], p[2]])
+            # p[1] é uma declaração, p[2] é uma lista de declarações
+            p[0] = ASTNode('DECLARACOES', [p[1]] + p[2])
         else:
-            p[0] = ASTNode('DECLARACOES')
+            p[0] = ASTNode('DECLARACOES', [])
 
     def p_declaracao(self, p):
         'DECLARACAO : VAR ID _ID COLON TIPO SEMI'
@@ -51,10 +52,11 @@ class SyntaxAnalyzer:
     def p__declaracao(self, p):
         '''_DECLARACAO : DECLARACAO _DECLARACAO
                       | '''
-        if len(p) == 4:
-            p[0] = ASTNode('_DECLARACAO', [p[2], p[3]])
+        if len(p) == 3:
+            # p[1] é uma declaração, p[2] é uma lista de declarações
+            p[0] = [p[1]] + p[2]
         else:
-            p[0] = ASTNode('_DECLARACAO')
+            p[0] = []
 
     def p_tipo(self, p):
         '''TIPO : INTEIRO

@@ -30,7 +30,7 @@ class SemanticAnalyzer:
 
     def _visit(self, node):
         # Se node for string ou valor literal, retorna como está
-        if isinstance(node, (str, int, float, bool)):
+        if isinstance(node, (str, int, bool)):
             return node
         method = getattr(self, f'_visit_{node.type.lower()}', self._visit_generic)
         return method(node)
