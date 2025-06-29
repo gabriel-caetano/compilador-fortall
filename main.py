@@ -11,8 +11,11 @@ def main():
     lexic = LexicalAnalyzer()
     tokens = lexic.tokenize_file(filename)
     # print(tokens)
+    # for token in tokens:
+    #     print(token)
     syntax = SyntaxAnalyzer()
     ast = syntax.parse(tokens)
+    # print(ast)
     semantic = SemanticAnalyzer()
     execTree = semantic.analyze(ast)
     # print(execTree)

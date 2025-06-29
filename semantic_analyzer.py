@@ -13,20 +13,14 @@ class SemanticAnalyzer:
         self.errors = []
 
     def analyze(self, ast):
-        """
-        Realiza a análise semântica da AST e gera a árvore de execução.
-        Retorna a raiz da árvore de execução (SemanticNode) ou None se houver erro.
-        """
         print('Análise semântica:')
-        exec_tree = self._visit(ast)
+        dependence_tree = self._visit(ast)
         if self.errors:
             for err in self.errors:
                 print(f"Erro semântico: {err}")
             return None
         print('Fim da análise semântica.')
-        # print(node)
-        # print(self.symbol_table)
-        return exec_tree
+        return dependence_tree
 
     def _visit(self, node):
         # Se node for string ou valor literal, retorna como está
@@ -63,8 +57,15 @@ class SemanticAnalyzer:
     def _visit_atribuicao(self, node):
         var = node.value
         expr = self._visit(node.children[0])
+
         if var not in self.symbol_table:
             self.errors.append(f"Variável '{var}' não declarada.")
+            var_type = None
+        else:
+            var_type = self.symbol_table[var]
+        expr_type = 'inteiro' if expr.type == 'EXPR' else 'logico'
+        if var_type and expr_type and var_type != expr_type:
+            self.errors.append(f"Atribuição incompatível: variável '{var}' é do tipo '{var_type}' mas expressão é do tipo '{expr_type}'.")
         return SemanticNode('ATRIBUICAO', [expr], var)
 
     def _visit_leitura(self, node):
@@ -128,5 +129,3 @@ class SemanticAnalyzer:
 
     def _visit_op_rel(self, node):
         return SemanticNode('OP_REL', value=node.value)
-
-    # Adicione outros métodos _visit_* conforme necessário para sua árvore
