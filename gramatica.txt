@@ -35,5 +35,7 @@ Gramática escrita
 <TERMO_LOGICO>  -> <FATOR_LOGICO> <_TERMO_LOGICO>
 <_TERMO_LOGICO> -> && <FATOR_LOGICO> <_TERMO_LOGICO> | ε
 <FATOR_LOGICO>  -> ! <FATOR_LOGICO> | <RELACIONAL> | ( <EXPR_LOGICA> ) | id | bool
-<RELACIONAL>    -> <EXPR> <OP_REL> <EXPR>
-<OP_REL>        -> < | <= | > | >= | = | <>
+<RELACIONAL>    -> <EXPR_REL> <OP_REL> <EXPR_REL> | <EXPR> <OP_INT> <EXPR>
+<EXPR_REL>      -> <EXPR> | <EXPR_LOGICA>
+<OP_REL>        -> = | <>
+<OP_INT>        -> < | <= | > | >=
