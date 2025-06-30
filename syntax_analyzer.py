@@ -2,13 +2,23 @@ import ply.yacc as yacc
 from tokens import tokens as tk
 
 class ASTNode:
-    def __init__(self, type_, children=None, value=None):
+    def __init__(self, type_, children=None, value=None, depth=1):
+
+        self.depth = depth
         self.type = type_
         self.children = children if children is not None else []
+        self.childDepth()
         self.value = value
+    
+    def setDepth(self, d):
+        self.depth = d
+
+    def childDepth(self):
+        for c in self.children:
+            c.setDepth(self.depth+1)
 
     def __repr__(self):
-        return f"ASTNode(type={self.type}, value={self.value})\nchildren=[\n{self.children}\n]"
+        return f"\nASTNode(type={self.type}, value={self.value}) childrens={len(self.children)}"
 
 class SyntaxAnalyzer:
     tokens = tk
@@ -41,22 +51,22 @@ class SyntaxAnalyzer:
                       | '''
         if len(p) == 3:
             # p[1] é uma declaração, p[2] é uma lista de declarações
-            p[0] = ASTNode('DECLARACOES', [p[1]] + p[2])
+            p[0] = ASTNode('DECLARACOES', children=[p[1], p[2]])
         else:
-            p[0] = ASTNode('DECLARACOES', [])
+            p[0] = ASTNode('DECLARACOES')
 
     def p_declaracao(self, p):
         'DECLARACAO : VAR ID _ID COLON TIPO SEMI'
-        p[0] = ASTNode('DECLARACAO', [[p[2]] + p[3], p[5]])
+        p[0] = ASTNode('DECLARACAO', children=[ASTNode('ID', value=p[2]), p[3], p[5]])
 
     def p__declaracao(self, p):
         '''_DECLARACAO : DECLARACAO _DECLARACAO
                       | '''
         if len(p) == 3:
             # p[1] é uma declaração, p[2] é uma lista de declarações
-            p[0] = [p[1]] + p[2]
+            p[0] = ASTNode('_DECLARACAO', children=[p[1], p[2]])
         else:
-            p[0] = []
+            p[0] = ASTNode('_DECLARACAO')
 
     def p_tipo(self, p):
         '''TIPO : INTEIRO
@@ -67,19 +77,19 @@ class SyntaxAnalyzer:
         '''_ID : COMMA ID _ID
                | '''
         if len(p) == 4:
-            p[0] = [p[2]] + p[3]
+            p[0] = ASTNode('_ID', children=[ASTNode('ID', value=p[2]), p[3]])
         else:
-            p[0] = []
+            p[0] = ASTNode('_ID')
 
     def p_composto(self, p):
         'COMPOSTO : INICIO COMANDOS FIM'
-        p[0] = ASTNode('COMPOSTO', [p[2]])
+        p[0] = ASTNode('COMPOSTO', children=[p[2]])
 
     def p_comandos(self, p):
         '''COMANDOS : COMANDO SEMI _COMANDO
                     | '''
         if len(p) == 4:
-            p[0] = ASTNode('COMANDOS', [p[1], p[3]])
+            p[0] = ASTNode('COMANDOS', children=[p[1], p[3]])
         else:
             p[0] = ASTNode('COMANDOS')
 
@@ -87,7 +97,7 @@ class SyntaxAnalyzer:
         '''_COMANDO : COMANDO SEMI _COMANDO
                     | '''
         if len(p) == 4:
-            p[0] = ASTNode('_COMANDO', [p[1], p[3]])
+            p[0] = ASTNode('_COMANDO', children=[p[1], p[3]])
         else:
             p[0] = ASTNode('_COMANDO')
 
@@ -98,17 +108,17 @@ class SyntaxAnalyzer:
                    | COMPOSTO
                    | CONDICIONAL
                    | REPETICAO'''
-        p[0] = p[1]
+        p[0] = ASTNode('COMANDO', children=[p[1]])
 
     def p_atribuicao(self, p):
         '''ATRIBUICAO : ID ATRIB EXPR
                     | ID ATRIB EXPR_LOGICA'''
-        p[0] = ASTNode('ATRIBUICAO', [p[3]], value=p[1])
+        p[0] = ASTNode('ATRIBUICAO', children=[ASTNode('ID', children=[p[1]]), p[3]])
 
     def p_leitura(self, p):
         'LEITURA : LER LPAREN ID _ID RPAREN'
         # Garante que todos os parâmetros sejam ASTNode do tipo ID
-        ids = [ASTNode('ID', value=p[3])] + [ASTNode('ID', value=x) for x in p[4]]
+        ids = [ASTNode('ID', value=p[3])] + p[4]
         p[0] = ASTNode('LEITURA', ids)
 
     def p_escrita(self, p):
