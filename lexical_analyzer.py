@@ -62,7 +62,7 @@ class LexicalAnalyzer:
         return t
 
     def t_BOOL(self, t):
-        r'(?i)verdadeiro|falso'
+        r'verdadeiro|falso'
         t.value = True if t.value.lower() == 'verdadeiro' else False
         return t
 
@@ -74,6 +74,20 @@ class LexicalAnalyzer:
     def t_newline(self, t):
         r'\n'
         t.lexer.lineno += 1
+
+    def t_errcomment(self, t):
+        r'/\*([^*]|\*+[^*/])'
+        msg = f"Comentário não fechado: '{t.value[0]}' na linha {t.lineno}"
+        self.errors.append(msg)
+        print(msg)
+        t.lexer.skip(1)
+                     
+    def t_errstr(self, t):
+        r'"([^*]|\*+[^*/])'
+        msg = f"String não fechada: '{t.value[0]}' na linha {t.lineno}"
+        self.errors.append(msg)
+        print(msg)
+        t.lexer.skip(1)
 
     def t_error(self, t):
         msg = f"Caractere ilegal: '{t.value[0]}' na linha {t.lineno}"
@@ -97,6 +111,4 @@ class LexicalAnalyzer:
                 break
             tokens_list.append(tok)
         print("Fim da análise léxica.")
-        # for token in tokens_list:
-        #     print(token)
         return tokens_list
