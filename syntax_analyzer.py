@@ -107,7 +107,9 @@ class SyntaxAnalyzer:
 
     def p_leitura(self, p):
         'LEITURA : LER LPAREN ID _ID RPAREN'
-        p[0] = ASTNode('LEITURA', [[p[3]] + p[4]])
+        # Garante que todos os parâmetros sejam ASTNode do tipo ID
+        ids = [ASTNode('ID', value=p[3])] + [ASTNode('ID', value=x) for x in p[4]]
+        p[0] = ASTNode('LEITURA', ids)
 
     def p_escrita(self, p):
         'ESCRITA : ESCREVER LPAREN ESPR_STR RPAREN'
@@ -126,7 +128,15 @@ class SyntaxAnalyzer:
                        | EXPR_LOGICA
                        | STR
                        | ID'''
-        p[0] = p[1]
+        if len(p) == 2:
+            if p[1][0] == p[1][-1] == '"':
+                # Se for string (entre aspas), mantém como string
+                p[0] = p[1]
+            elif isinstance(p[1], ASTNode):
+                p[0] = p[1]
+            else:
+                # Se for ID, cria ASTNode do tipo ID
+                p[0] = ASTNode('ID', value=p[1])
 
     def p__item_escrita(self, p):
         '''_ITEM_ESCRITA : COMMA ITEM_ESCRITA _ITEM_ESCRITA
