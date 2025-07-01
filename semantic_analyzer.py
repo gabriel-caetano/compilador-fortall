@@ -37,10 +37,28 @@ class SemanticAnalyzer:
 
     def _visit_generic(self, node):
         # Visita recursivamente todos os filhos
-        children = [self._visit(child) if isinstance(child, (SemanticNode, type(node))) else child for child in (node.children if hasattr(node, 'children') else [])]
+        if len(node.children) > 1:
+            print('node.type generico')
+            print(node.type)
+            def action():
+                print(f'generic {node.type}')
+                res = node.value
+                print(f'generic value {res}')
+                return res
+            return SemanticNode(node.type, [], node.value, action=action)
+
+
+        if len(node.children) == 0:
+            def action():
+                res = node.value
+                return res
+            return SemanticNode(node.type, [], node.value, action=action)
+
+        children = [self._visit(node.children[0])]
         def action():
-            return node.value
-        return SemanticNode(node.type, children, node.value, action)
+            res = children[0].action()
+            return res
+        return SemanticNode(node.type, children, node.value, action=action)
 
     def _visit_prog(self, node):
         [id_node, declaracoes, composto] = node.children
@@ -48,7 +66,9 @@ class SemanticAnalyzer:
 
         def action():
             children[0].action()
-            return children[1].action()
+            res = children[1].action()
+            return res
+
 
         return SemanticNode('PROG', children=children, value=id_node.value, action=action)
 
@@ -57,7 +77,8 @@ class SemanticAnalyzer:
         children = [self._visit(declaracao), self._visit(_declaracao)]
         def action():
             children[0].action()
-            children[1].action()
+            res = children[1].action()
+            return res
         return SemanticNode('DECLARACOES', children, action=action)
 
     def _visit_declaracao(self, node):
@@ -90,6 +111,15 @@ class SemanticAnalyzer:
 
         return SemanticNode('DECLARACAO', [ids, tipo], action=action)
 
+    def _visit__declaracoes(self, node):
+        # Declarações de variáveis
+        children = []
+        if len(node.children) == 2:
+            [declaracao, _declaracao] = node.children
+            children = [self._visit(declaracao), self._visit(_declaracao)]
+
+        return SemanticNode('_DECLARACAO', children)
+
     def _visit_composto(self, node):
         # O nó 'COMPOSTO' possui um filho: 'comandos'
         [comandos] = node.children
@@ -100,24 +130,28 @@ class SemanticAnalyzer:
                 if node is not None and len(node.children) == 0:
                     return
                 
-                node.children[0].action()
-                exec_comandos(node.children[1])
-            exec_comandos(children[0])
+                res = node.children[0].action()
+                res2 = exec_comandos(node.children[1])
+                return res if res2 == None else res2
+
+            res = exec_comandos(children[0])
+            return res
         return SemanticNode('COMPOSTO', children, action=action)
 
     def _visit_comandos(self, node):
         [comando, _comando] = node.children
         children = [self._visit(comando), self._visit(_comando)]
         def action():
-            children[0].action()
-            children[1].action()
+            res1 = children[0].action()
+            res2 = children[1].action()
+            return res1 if res2 == None else res2
         return SemanticNode('COMANDOS', children, action=action)
         
     def _visit_comando(self, node):
         [comando] = node.children
         children = [self._visit(comando)]
         def action():
-            children[0].action()
+            res = children[0].action()
         return SemanticNode('COMANDO', children, action=action)
 
     def _visit__comando(self, node):
@@ -126,15 +160,6 @@ class SemanticAnalyzer:
             [comando, _comando] = node.children
             children = [self._visit(comando), self._visit(_comando)]
         return SemanticNode('_COMANDO', children)
-
-    def _visit__declaracoes(self, node):
-        # Declarações de variáveis
-        children = []
-        if len(node.children) == 2:
-            [declaracao, _declaracao] = node.children
-            children = [self._visit(declaracao), self._visit(_declaracao)]
-
-        return SemanticNode('_DECLARACAO', children)
 
     def _visit_atribuicao(self, node):
         [id_node, expr] = node.children
@@ -191,57 +216,36 @@ class SemanticAnalyzer:
         children = [self._visit(expr)]
 
         def action():
-            children[0].action()
-            print()
+            print(children[0].action())
         return SemanticNode('ESCRITA', children, action=action)
 
     def _visit_expr_str(self, node):
         [item, _item] = node.children
         children = [self._visit(item), self._visit(_item)]
-        var = item.value
         def action():
-            if node.type == 'ID':
-                if var not in self.symbol_table.keys():
-                    self.errors.append(f"Variável '{var}' não declarada.")
-                    (_, value) = self.symbol_table[var]
-                print(value, end=' ')
-            else:
-                print(var, end=' ')
-            children[1].action()
+            val = children[0].action()
+            if children[0].type == 'ID':
+                (_, val) = self.symbol_table[val]
+            items = [val] + children[1].action()
+            return ' '.join([ f'{i}' for i in items ])
+                
 
-        return SemanticNode('EXPR', children, action=action)
-
-    def _visit_item_escrita(self, node):
-        var = node.value
-        def action():
-            print('escrita...')
-            if node.type == 'ID':
-                if var not in self.symbol_table.keys():
-                    self.errors.append(f"Variável '{var}' não declarada.")
-                (_, value) = self.symbol_table[var]
-                print(value, end=' ')
-            else:
-                print(var, end=' ')
-        
-        return SemanticNode('ITEM_ESCRITA', action=action)
+        return SemanticNode('EXPR_STR', children, action=action)
     
     def _visit__item_escrita(self, node):
         if len(node.children) == 0:
-
-            return SemanticNode('_ITEM_ESCRITA')
+            def action():
+                return []
+            return SemanticNode('_ITEM_ESCRITA', action=action)
 
         [item, _item] = node.children
         children = [self._visit(item), self._visit(_item)]
-        var = item.value
         def action():
-            if item.type == 'ID':
-                if var not in self.symbol_table.keys():
-                    self.errors.append(f"Variável '{var}' não declarada.")
-                (_, value) = self.symbol_table[var]
-                print(value, end=' ')
-            else:
-                print(var, end=' ')
-            children[1].action()
+            val = children[0].action()
+            if children[0].type == 'ID':
+                (_, val) = self.symbol_table[val]
+            items = [val] + children[1].action()
+            return items
         
         return SemanticNode('_ITEM_ESCRITA', action=action)
         
@@ -269,9 +273,12 @@ class SemanticAnalyzer:
                 expr = children[1].action()
                 return termo + expr
             elif children[1].value == '-':
-                return children[0].action() - children[1].action()
+                termo = children[0].action() 
+                expr = children[1].action()
+                return termo - expr
             else:
-                return children[0].action()
+                termo = children[0].action()
+                return termo
 
         return SemanticNode('EXPR', children, action=action)
 
@@ -294,21 +301,138 @@ class SemanticAnalyzer:
         return SemanticNode('_EXPR', children, action=action, value=node.value)
 
     def _visit_expr_logica(self, node):
-        
-        children = [self._visit(child) for child in node.children]
-        return SemanticNode('EXPR_LOGICA', children)
+        [termo, _expr] = node.children
+        children = [self._visit(termo), self._visit(_expr)]
+
+        def action():
+            print(f'operador logico: {children[1].value}')
+            if children[1].value == '||':
+                termo = children[0].action() 
+                expr = children[1].action()
+                return termo or expr
+            else:
+                termo = children[0].action()
+                return termo
+
+        return SemanticNode('EXPR_LOGICA', children, action=action)
+
+    def _visit__expr_logica(self, node):
+        if len(node.children) == 0:
+            def action():
+                return 0
+            return SemanticNode('_EXPR_LOGICA', [], action=action, value=node.value)
+        [termo, _expr] = node.children
+        children = [self._visit(termo), self._visit(_expr)]
+
+        def action():
+            if _expr.value == '||':
+                return children[0].action() or children[1].action()
+            else:
+                return children[0].action()
+
+        return SemanticNode('_EXPR_LOGICA', children, action=action, value=node.value)
+
+    def _visit_termo_logico(self, node):
+        if len(node.children) == 0:
+            def action():
+                return 1
+            return SemanticNode('TERMO_LOGICO', [], action=action, value=node.value)
+        [fator, _termo] = node.children
+        children = [self._visit(fator), self._visit(_termo)]
+        def action():
+            if _termo.value == '&&':
+                fator = children[0].action()
+                termo = children[1].action()
+                res = fator and termo
+                return res
+            else:
+                return children[0].action()
+
+        return SemanticNode('TERMO_LOGICO', children, value=node.value, action=action)
+
+    def _visit__termo_logico(self, node):
+        if len(node.children) == 0:
+            def action():
+                return 1
+            return SemanticNode('_TERMO_LOGICO', [], action=action, value=node.value)
+        [fator, _termo] = node.children
+        children = [self._visit(fator), self._visit(_termo)]
+
+        def action():
+            if _termo.value == '*':
+                return children[0].action() * children[1].action()
+            elif _termo.value == '/':
+                return children[0].action() / children[1].action()
+            else:
+                print('termo3')
+                print(node.type)
+                print(children[0].type)
+                print(children[0].value)
+                print(children[0].action())
+                return children[0].action()
+
+        return SemanticNode('_TERMO_LOGICO', children, action=action, value=node.value)
+
+    def _visit_fator_logico(self, node):
+        children = [self._visit(node.children[0])]
+        child_type = children[0].type
+
+        if child_type == 'NOT':
+            def action():
+                return not children[0].action()
+            return SemanticNode('NOT', children, action=action)
+        if child_type == 'RELACIONAL':
+            def action():
+                return children[0].action()
+            return SemanticNode('RELACIONAL', action=action)
+        if child_type == 'ID':
+            if children[0].value not in self.symbol_table:
+                self.errors.append(f"Variável '{children[0].value}' não declarada.")
+            def action():
+                (_, value) = self.symbol_table[children[0].value]
+                return value
+            return SemanticNode('ID', value=children[0].value, action=action)
+        if child_type == 'BOOL':
+            def action():
+                return children[0].value
+            return SemanticNode('BOOL', action=action)
+        # Parênteses ou outros fatores
+        children = [self._visit(children[0].children[0])]
+        def action():
+            return children[0].action()
+        return SemanticNode(children[0].type, children, action=action, value=node.value)
+
+    def _visit_relacional(self, node):
+        falta implementar esta caralha em diante pro tipo logico funcionar
+        [expr1, expr2] = node.children
+        children = [self._visit(termo), self._visit(_expr)]
+
+        def action():
+            if children[1].value == '+':
+                termo = children[0].action() 
+                expr = children[1].action()
+                return termo + expr
+            elif children[1].value == '-':
+                termo = children[0].action() 
+                expr = children[1].action()
+                return termo - expr
+            else:
+                termo = children[0].action()
+                return termo
+
+        return SemanticNode('EXPR', children, action=action)
+
+
 
     def _visit_termo(self, node):
         if len(node.children) == 0:
             def action():
                 return 1
-            return SemanticNode('_TERMO', [], action=action, value=node.value)
+            return SemanticNode('TERMO', [], action=action, value=node.value)
         [fator, _termo] = node.children
         children = [self._visit(fator), self._visit(_termo)]
         def action():
-            print('termo')
             if _termo.value == '*':
-                print('termo1')
                 fator = children[0].action()
                 termo = children[1].action()
                 res = fator * termo

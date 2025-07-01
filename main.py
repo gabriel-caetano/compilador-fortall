@@ -2,7 +2,6 @@ import sys
 from lexical_analyzer import LexicalAnalyzer
 from syntax_analyzer import SyntaxAnalyzer
 from semantic_analyzer import SemanticAnalyzer
-from executor import Executor
 
 def main():
     if len(sys.argv) < 2:
@@ -12,8 +11,8 @@ def main():
     lexic = LexicalAnalyzer()
     tokens = lexic.tokenize_file(filename)
     # print(tokens)
-    # for token in tokens:
-    #     print(token)
+    for token in tokens:
+        print(token)
     syntax = SyntaxAnalyzer()
     ast = syntax.parse(tokens)
     node = ast
