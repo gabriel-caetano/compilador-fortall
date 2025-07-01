@@ -16,25 +16,23 @@ def main():
     #     print(token)
     syntax = SyntaxAnalyzer()
     ast = syntax.parse(tokens)
-    # node = ast
-    # queue = [node]
-    # while len(queue) > 0:
-    #     print('no')
-    #     print(queue[0])
-    #     print('resto')
-    #     print(queue[1:])
-    #     if queue[0].children:
-    #         print('filhos')
-    #         print(queue[0].children)
-    #         queue = queue[1:] + queue[0].children
-    #     print('nova fila')
-    #     print(queue)
-    # semantic = SemanticAnalyzer()
-    # dependence_tree = semantic.analyze(ast)
-    # # print(dependence_tree)
-    # executor = Executor()
-    # executor.execute(dependence_tree)
-    
+    node = ast
+    queue = [node]
+    while len(queue) > 0:
+        print(f"{'-|'*queue[0].depth}: {queue[0]}")
+        # print('resto')
+        # print(queue[1:])
+        if queue[0].children:
+        #     print('filhos')
+        #     print(queue[0].children)
+            queue = queue[0].children + queue[1:]
+        else:
+            queue = queue[1:]
+        # print('nova fila')
+        # print(queue)
+    semantic = SemanticAnalyzer()
+    dependence_tree = semantic.analyze(ast)
+    dependence_tree.action()
 
 if __name__ == "__main__":
     main()

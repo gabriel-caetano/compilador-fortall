@@ -12,18 +12,20 @@ class ASTNode:
     
     def setDepth(self, d):
         self.depth = d
+        self.childDepth()
 
     def childDepth(self):
+        
         for c in self.children:
             c.setDepth(self.depth+1)
 
     def __repr__(self):
-        return f"\nASTNode(type={self.type}, value={self.value}) childrens={len(self.children)}"
+        return f"ASTNode(type={self.type}, value={self.value}) childrens={len(self.children)}"
 
 class SyntaxAnalyzer:
     tokens = tk
     def __init__(self):
-         self.parser = yacc.yacc(module=self, start='PROG', debug=False, write_tables=False)
+         self.parser = yacc.yacc(module=self, start='PROG', debug=False, write_tables=True, outputdir='./')
 
     def parse(self, tokens):
         print("Análise sintática:")
@@ -44,29 +46,37 @@ class SyntaxAnalyzer:
 
     def p_prog(self, p):
         'PROG : PROGRAMA ID SEMI DECLARACOES COMPOSTO DOT'
-        p[0] = ASTNode('PROG', [p[4], p[5]], value=p[2])
+        id_node = ASTNode('ID', value=p[2])
+        declaracoes = p[4]
+        composto = p[5]
+        p[0] = ASTNode('PROG', [id_node, declaracoes, composto])
 
     def p_declaracoes(self, p):
         '''DECLARACOES : DECLARACAO _DECLARACAO
                       | '''
         if len(p) == 3:
-            # p[1] é uma declaração, p[2] é uma lista de declarações
-            p[0] = ASTNode('DECLARACOES', children=[p[1], p[2]])
+            declaracao = p[1]
+            _declaracao = p[2]
+            p[0] = ASTNode('DECLARACOES', children=[declaracao, _declaracao])
         else:
             p[0] = ASTNode('DECLARACOES')
 
     def p_declaracao(self, p):
         'DECLARACAO : VAR ID _ID COLON TIPO SEMI'
-        p[0] = ASTNode('DECLARACAO', children=[ASTNode('ID', value=p[2]), p[3], p[5]])
+        id_node = ASTNode('ID', value=p[2])
+        _id = p[3]
+        tipo = p[5]
+        p[0] = ASTNode('DECLARACAO', children=[id_node, _id, tipo])
 
     def p__declaracao(self, p):
         '''_DECLARACAO : DECLARACAO _DECLARACAO
                       | '''
         if len(p) == 3:
-            # p[1] é uma declaração, p[2] é uma lista de declarações
-            p[0] = ASTNode('_DECLARACAO', children=[p[1], p[2]])
+            declaracao = p[1]
+            _declaracao = p[2]
+            p[0] = ASTNode('_DECLARACOES', children=[declaracao, _declaracao])
         else:
-            p[0] = ASTNode('_DECLARACAO')
+            p[0] = ASTNode('_DECLARACOES')
 
     def p_tipo(self, p):
         '''TIPO : INTEIRO
@@ -77,19 +87,24 @@ class SyntaxAnalyzer:
         '''_ID : COMMA ID _ID
                | '''
         if len(p) == 4:
-            p[0] = ASTNode('_ID', children=[ASTNode('ID', value=p[2]), p[3]])
+            id_node = ASTNode('ID', value=p[2])
+            _id = p[3]
+            p[0] = ASTNode('_ID', children=[id_node, _id])
         else:
             p[0] = ASTNode('_ID')
 
     def p_composto(self, p):
         'COMPOSTO : INICIO COMANDOS FIM'
-        p[0] = ASTNode('COMPOSTO', children=[p[2]])
+        comandos = p[2]
+        p[0] = ASTNode('COMPOSTO', children=[comandos])
 
     def p_comandos(self, p):
         '''COMANDOS : COMANDO SEMI _COMANDO
                     | '''
         if len(p) == 4:
-            p[0] = ASTNode('COMANDOS', children=[p[1], p[3]])
+            comando = p[1]
+            _comando = p[3]
+            p[0] = ASTNode('COMANDOS', children=[comando, _comando])
         else:
             p[0] = ASTNode('COMANDOS')
 
@@ -97,7 +112,9 @@ class SyntaxAnalyzer:
         '''_COMANDO : COMANDO SEMI _COMANDO
                     | '''
         if len(p) == 4:
-            p[0] = ASTNode('_COMANDO', children=[p[1], p[3]])
+            comando = p[1]
+            _comando = p[3]
+            p[0] = ASTNode('_COMANDO', children=[comando, _comando])
         else:
             p[0] = ASTNode('_COMANDO')
 
@@ -113,86 +130,105 @@ class SyntaxAnalyzer:
     def p_atribuicao(self, p):
         '''ATRIBUICAO : ID ATRIB EXPR
                     | ID ATRIB EXPR_LOGICA'''
-        p[0] = ASTNode('ATRIBUICAO', children=[ASTNode('ID', children=[p[1]]), p[3]])
+        id_node = ASTNode('ID', value=p[1])
+        expr = p[3]
+        p[0] = ASTNode('ATRIBUICAO', children=[id_node, expr])
 
     def p_leitura(self, p):
         'LEITURA : LER LPAREN ID _ID RPAREN'
-        # Garante que todos os parâmetros sejam ASTNode do tipo ID
-        ids = [ASTNode('ID', value=p[3])] + p[4]
-        p[0] = ASTNode('LEITURA', ids)
+        id_node = ASTNode('ID', value=p[3])
+        _id = p[4]
+        p[0] = ASTNode('LEITURA', children=[id_node, _id])
 
     def p_escrita(self, p):
-        'ESCRITA : ESCREVER LPAREN ESPR_STR RPAREN'
-        p[0] = ASTNode('ESCRITA', [p[3]])
+        'ESCRITA : ESCREVER LPAREN EXPR_STR RPAREN'
+        expr_str = p[3]
+        p[0] = ASTNode('ESCRITA', children=[expr_str])
 
-    def p_espr_str(self, p):
-        '''ESPR_STR : ITEM_ESCRITA _ITEM_ESCRITA
+    def p_expr_str(self, p):
+        '''EXPR_STR : ITEM_ESCRITA _ITEM_ESCRITA
                     | '''
         if len(p) == 3:
-            p[0] = [p[1]] + p[2]
+            item_escrita = p[1]
+            _item_escrita = p[2]
+            p[0] = ASTNode('EXPR_STR', children=[item_escrita, _item_escrita])
         else:
-            p[0] = []
+            p[0] = ASTNode('EXPR_STR')
 
     def p_item_escrita(self, p):
         '''ITEM_ESCRITA : EXPR
                        | EXPR_LOGICA
                        | STR
                        | ID'''
-        if len(p) == 2:
-            if p[1][0] == p[1][-1] == '"':
-                # Se for string (entre aspas), mantém como string
-                p[0] = p[1]
-            elif isinstance(p[1], ASTNode):
-                p[0] = p[1]
-            else:
-                # Se for ID, cria ASTNode do tipo ID
-                p[0] = ASTNode('ID', value=p[1])
+        if isinstance(p[1], ASTNode):
+            p[0] = p[1]
+        elif p[1][0] == p[1][-1] == '"':
+            p[0] = ASTNode('STR', value=p[1])
+        else: 
+            p[0] = ASTNode('ID', value=p[1])
 
     def p__item_escrita(self, p):
         '''_ITEM_ESCRITA : COMMA ITEM_ESCRITA _ITEM_ESCRITA
                          | '''
         if len(p) == 4:
-            p[0] = [p[2]] + p[3]
+            item_escrita = p[2]
+            _item_escrita = p[3]
+            p[0] = ASTNode('_ITEM_ESCRITA', children=[item_escrita, _item_escrita])
         else:
-            p[0] = []
+            p[0] = ASTNode('_ITEM_ESCRITA')
 
     def p_condicional(self, p):
         '''CONDICIONAL : SE EXPR_LOGICA ENTAO COMANDOS SENAO COMANDOS FIM
                        | SE EXPR_LOGICA ENTAO COMANDOS FIM'''
+        expr_logica = p[2]
+        comandos_se = p[4]
         if len(p) == 8:
-            p[0] = ASTNode('CONDICIONAL', [p[2], p[4], p[6]], value='SE_SENAO')
+            comandos_senao = p[6]
+            p[0] = ASTNode('CONDICIONAL', [expr_logica, comandos_se, comandos_senao], value='SE_SENAO')
         else:
-            p[0] = ASTNode('CONDICIONAL', [p[2], p[4]], value='SE')
+            p[0] = ASTNode('CONDICIONAL', [expr_logica, comandos_se], value='SE')
 
     def p_repeticao(self, p):
         'REPETICAO : ENQUANTO EXPR_LOGICA FACA COMANDOS FIM'
-        p[0] = ASTNode('REPETICAO', [p[2], p[4]])
+        expr_logica = p[2]
+        comandos = p[4]
+        p[0] = ASTNode('REPETICAO', children=[expr_logica, comandos])
 
     def p_expr(self, p):
         'EXPR : TERMO _EXPR'
-        p[0] = ASTNode('EXPR', [p[1]] + p[2])
+        termo = p[1]
+        _expr = p[2]
+        p[0] = ASTNode('EXPR', children=[termo, _expr])
 
     def p__expr(self, p):
         '''_EXPR : MAIS TERMO _EXPR
                  | MENOS TERMO _EXPR
                  | '''
         if len(p) == 4:
-            p[0] = [ASTNode(p[1]), p[2]] + p[3]
+            operador = p[1]
+            termo = p[2]
+            _expr = p[3]
+            p[0] = ASTNode('_EXPR', [termo, _expr], value=operador)
         else:
-            p[0] = []
+            p[0] = ASTNode('_EXPR')
 
     def p_termo(self, p):
         'TERMO : FATOR _TERMO'
-        p[0] = ASTNode('TERMO', [p[1]] + p[2])
+        fator = p[1]
+        _termo = p[2]
+        p[0] = ASTNode('TERMO', [fator, _termo])
 
     def p__termo(self, p):
         '''_TERMO : VEZES FATOR _TERMO
                   | DIV FATOR _TERMO
                   | '''
         if len(p) == 4:
-            p[0] = [ASTNode(p[1]), p[2]] + p[3]
+            operador = p[1]
+            fator = p[2]
+            _termo = p[3]
+            p[0] = ASTNode('_TERMO', children=[fator, _termo], value=operador)
         else:
-            p[0] = []
+            p[0] = ASTNode('_TERMO')
 
     def p_fator(self, p):
         '''FATOR : MENOS FATOR %prec UMINUS
@@ -200,38 +236,54 @@ class SyntaxAnalyzer:
                  | ID
                  | LPAREN EXPR RPAREN'''
         if len(p) == 3:
-            p[0] = ASTNode('UMINUS', [p[2]])
+            fator = p[2]
+            minus = ASTNode('UMINUS', children=[fator])
+            p[0] = ASTNode('FATOR', children=[minus])
+
         elif len(p) == 2:
             if isinstance(p[1], int):
-                p[0] = ASTNode('NUM', value=p[1])
+                num = ASTNode('NUM', value=p[1])
+                p[0] = ASTNode('FATOR', children=[num])
             else:
-                p[0] = ASTNode('ID', value=p[1])
+                id_node = ASTNode('ID', value=p[1])
+                p[0] = ASTNode('FATOR', children=[id_node])
         else:
-            p[0] = p[2]
+            expr = p[2]
+            p[0] = ASTNode('FATOR', children=[expr])
 
     def p_expr_logica(self, p):
         'EXPR_LOGICA : TERMO_LOGICO _EXPR_LOGICA'
-        p[0] = ASTNode('EXPR_LOGICA', [p[1]] + p[2])
+        termo_logico = p[1]
+        _expr_logica = p[2]
+        p[0] = ASTNode('EXPR_LOGICA', [termo_logico, _expr_logica])
 
     def p__expr_logica(self, p):
         '''_EXPR_LOGICA : OR TERMO_LOGICO _EXPR_LOGICA
                         | '''
         if len(p) == 4:
-            p[0] = [ASTNode('OR'), p[2]] + p[3]
+            operador = p[1]
+            termo_logico = p[2]
+            _expr_logica = p[3]
+            p[0] = ASTNode('_EXPR_LOGICA', children=[termo_logico, _expr_logica], value=operador)
         else:
-            p[0] = []
+            p[0] = ASTNode('_EXPR_LOGICA')
 
     def p_termo_logico(self, p):
         'TERMO_LOGICO : FATOR_LOGICO _TERMO_LOGICO'
-        p[0] = ASTNode('TERMO_LOGICO', [p[1]] + p[2])
+        fator_logico = p[1]
+        _termo_logico = p[2]
+        p[0] = ASTNode('TERMO_LOGICO', children=[fator_logico, _termo_logico])
 
     def p__termo_logico(self, p):
         '''_TERMO_LOGICO : AND FATOR_LOGICO _TERMO_LOGICO
                          | '''
         if len(p) == 4:
-            p[0] = [ASTNode('AND'), p[2]] + p[3]
+            operador = p[1]
+            fator_logico = p[2]
+            _termo_logico = p[3]
+            p[0] = ASTNode('_TERMO_LOGICO', children=[fator_logico, _termo_logico], value=operador)
         else:
-            p[0] = []
+            p[0] = ASTNode('_TERMO_LOGICO')
 
     def p_fator_logico(self, p):
         '''FATOR_LOGICO : NOT FATOR_LOGICO
@@ -239,26 +291,34 @@ class SyntaxAnalyzer:
                         | LPAREN EXPR_LOGICA RPAREN
                         | ID
                         | BOOL'''
-        if len(p) == 3:
-            p[0] = ASTNode('NOT', [p[2]])
-        elif len(p) == 2:
+        if len(p) == 4:
+            # lparen expr_logica rparen
+            p[0] = p[2]
+        
+        elif len(p) == 3:
+            # not
+            fator_logico = p[2]
+            p[0] = ASTNode('NOT', children=[fator_logico])
+        else :
             if isinstance(p[1], ASTNode):
                 p[0] = p[1]
             elif isinstance(p[1], bool):
                 p[0] = ASTNode('BOOL', value=p[1])
             else:
                 p[0] = ASTNode('ID', value=p[1])
-        else:
-            p[0] = p[2]
 
     def p_relacional(self, p):
         '''RELACIONAL : EXPR_REL OP_REL EXPR_REL
                       | EXPR OP_INT EXPR'''
-        p[0] = ASTNode('RELACIONAL', [p[1], ASTNode(p[2]), p[3]])
+        operador = p[2]
+        expr_l = p[1]
+        expr_r = p[3]
+        p[0] = ASTNode('RELACIONAL', children=[expr_l, expr_r], value=operador)
 
     def p_expr_rel(self, p):
         '''EXPR_REL : EXPR
                     | EXPR_LOGICA'''
+        
         p[0] = p[1]
 
     def p_op_rel(self, p):

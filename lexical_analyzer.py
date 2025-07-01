@@ -44,7 +44,7 @@ class LexicalAnalyzer:
     t_ignore = ' \t\r'
 
     def __init__(self):
-        self.lexer = lex.lex(module=self)
+        self.lexer = lex.lex(module=self, outputdir='./')
         self.errors = []
 
     def t_COMMENT(self, t):
@@ -53,7 +53,6 @@ class LexicalAnalyzer:
 
     def t_STR(self, t):
         r'"([^\"]|\\\")*"'
-        t.value = t.value[1:-1]
         return t
 
     def t_NUM(self, t):
