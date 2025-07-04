@@ -308,26 +308,16 @@ class SyntaxAnalyzer:
                 p[0] = ASTNode('ID', value=p[1])
 
     def p_relacional(self, p):
-        '''RELACIONAL : EXPR_REL OP_REL EXPR_REL
-                      | EXPR OP_INT EXPR'''
+        '''RELACIONAL : EXPR OP_REL EXPR'''
         operador = p[2]
         expr_l = p[1]
         expr_r = p[3]
         p[0] = ASTNode('RELACIONAL', children=[expr_l, expr_r], value=operador)
 
-    def p_expr_rel(self, p):
-        '''EXPR_REL : EXPR
-                    | EXPR_LOGICA'''
-        
-        p[0] = p[1]
-
     def p_op_rel(self, p):
         '''OP_REL : IGUAL
-                  | DIF'''
-        p[0] = p[1]
-
-    def p_op_int(self, p):
-        '''OP_INT : MENOR
+                  | DIF
+                  | MENOR
                   | MENORIG
                   | MAIOR
                   | MAIORIG'''

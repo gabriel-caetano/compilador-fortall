@@ -30,7 +30,7 @@ inicio
     senao
         Escrever("Flag é verdadeiro");
     fim;
-    enquanto terminou = falso faca
+    enquanto !terminou faca
         Escrever("Loop até total < 0");
         total := total - 5;
         se total < 0 entao

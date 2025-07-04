@@ -5,6 +5,6 @@ inicio
     se n > 0 entao
         Escrever("n é positivo");
     senao
-        Escrever("n não é positivo");
+        Escrever("n é negativo");
     fim;
 fim.

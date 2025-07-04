@@ -207,7 +207,9 @@ class SemanticAnalyzer:
                     try:
                         self.symbol_table[var] = (table_type, int(read))
                     except:
-                        raise TypeError(f"Não foi possivel converter o valor '{read}' para o tipo '{table_type}'.")
+                        print(f"Erro semântico: Não foi possivel converter o valor '{read}' para o tipo '{table_type}'.")
+                        exit()
+
 
         return SemanticNode('LEITURA', ids, action=action)
 

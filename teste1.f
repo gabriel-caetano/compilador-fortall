@@ -42,7 +42,7 @@ inicio
     senao
         Escrever("cond2 falso");
     fim;
-    enquanto terminou = falso faca
+    enquanto !terminou faca
         Escrever("Loop principal");
         resultado := resultado - 1;
         se resultado <= 0 entao
