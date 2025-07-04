@@ -38,12 +38,8 @@ class SemanticAnalyzer:
     def _visit_generic(self, node):
         # Visita recursivamente todos os filhos
         if len(node.children) > 1:
-            print('node.type generico')
-            print(node.type)
             def action():
-                print(f'generic {node.type}')
                 res = node.value
-                print(f'generic value {res}')
                 return res
             return SemanticNode(node.type, [], node.value, action=action)
 
@@ -73,8 +69,12 @@ class SemanticAnalyzer:
         return SemanticNode('PROG', children=children, value=id_node.value, action=action)
 
     def _visit_declaracoes(self, node):
+
+        if len(node.children) == 0:
+            return SemanticNode('DECLARACOES')
         [declaracao, _declaracao] = node.children
         children = [self._visit(declaracao), self._visit(_declaracao)]
+        
         def action():
             children[0].action()
             res = children[1].action()
@@ -110,15 +110,6 @@ class SemanticAnalyzer:
                     self.symbol_table[var] = (tipo.value,None)
 
         return SemanticNode('DECLARACAO', [ids, tipo], action=action)
-
-    def _visit__declaracoes(self, node):
-        # Declarações de variáveis
-        children = []
-        if len(node.children) == 2:
-            [declaracao, _declaracao] = node.children
-            children = [self._visit(declaracao), self._visit(_declaracao)]
-
-        return SemanticNode('_DECLARACAO', children)
 
     def _visit_composto(self, node):
         # O nó 'COMPOSTO' possui um filho: 'comandos'

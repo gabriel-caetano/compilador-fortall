@@ -2,9 +2,8 @@ Gramática escrita
 
 <PROG>		    -> programa id; <DECLARACOES> <COMPOSTO> .
 
-<DECLARACOES>	-> <DECLARACAO> <_DECLARACAO> | ε
-<DECLARACAO>    -> var <ID> <_ID> : <TIPO> ;
-<_DECLARACAO>   -> <DECLARACAO> <_DECLARACAO> | ε
+<DECLARACOES>	-> <DECLARACAO>; <DECLARACOES> | ε
+<DECLARACAO>    -> var <ID> <_ID> : <TIPO>
 <TIPO>		    -> inteiro | logico
 <ID>            -> id <_ID>
 <_ID>		    -> , <ID> <_ID> | ε
@@ -15,7 +14,7 @@ Gramática escrita
 <_COMANDO>      -> <COMANDO>; <_COMANDO> | ε
 
 <ATRIBUICAO>	-> id := <EXPR> | id := <EXPR_LOGICA>
-<LEITURA>	    -> Ler(<ID><_ID>)
+<LEITURA>	    -> Ler(<ID>)
 <ESCRITA>       -> Escrever (<ESPR_STR>)
 <CONDICIONAL>	-> se <EXPR_LOGICA> entao <COMANDOS> senao <COMANDOS> fim | se <EXPR_LOGICA> entao <COMANDOS> fim
 <REPETICAO>	    -> enquanto <EXPR_LOGICA> faca <COMANDOS> fim

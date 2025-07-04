@@ -52,31 +52,21 @@ class SyntaxAnalyzer:
         p[0] = ASTNode('PROG', [id_node, declaracoes, composto])
 
     def p_declaracoes(self, p):
-        '''DECLARACOES : DECLARACAO _DECLARACAO
+        '''DECLARACOES : DECLARACAO SEMI DECLARACOES
                       | '''
-        if len(p) == 3:
+        if len(p) == 4:
             declaracao = p[1]
-            _declaracao = p[2]
-            p[0] = ASTNode('DECLARACOES', children=[declaracao, _declaracao])
+            declaracoes = p[3]
+            p[0] = ASTNode('DECLARACOES', children=[declaracao, declaracoes])
         else:
             p[0] = ASTNode('DECLARACOES')
 
     def p_declaracao(self, p):
-        'DECLARACAO : VAR ID _ID COLON TIPO SEMI'
+        'DECLARACAO : VAR ID _ID COLON TIPO'
         id_node = ASTNode('ID', value=p[2])
         _id = p[3]
         tipo = p[5]
         p[0] = ASTNode('DECLARACAO', children=[id_node, _id, tipo])
-
-    def p__declaracao(self, p):
-        '''_DECLARACAO : DECLARACAO _DECLARACAO
-                      | '''
-        if len(p) == 3:
-            declaracao = p[1]
-            _declaracao = p[2]
-            p[0] = ASTNode('_DECLARACOES', children=[declaracao, _declaracao])
-        else:
-            p[0] = ASTNode('_DECLARACOES')
 
     def p_tipo(self, p):
         '''TIPO : INTEIRO
