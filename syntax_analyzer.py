@@ -33,16 +33,6 @@ class SyntaxAnalyzer:
         print("Fim da análise sintática.")
         return ast
 
-    # Precedência dos operadores
-    precedence = (
-        ('left', 'OR'),
-        ('left', 'AND'),
-        ('right', 'NOT'),
-        ('left', 'MENOR', 'MENORIG', 'MAIOR', 'MAIORIG', 'IGUAL', 'DIF'),
-        ('left', 'MAIS', 'MENOS'),
-        ('left', 'VEZES', 'DIV'),
-        ('right', 'UMINUS'),
-    )
 
     def p_prog(self, p):
         'PROG : PROGRAMA ID SEMI DECLARACOES COMPOSTO DOT'
@@ -89,24 +79,14 @@ class SyntaxAnalyzer:
         p[0] = ASTNode('COMPOSTO', children=[comandos])
 
     def p_comandos(self, p):
-        '''COMANDOS : COMANDO SEMI _COMANDO
+        '''COMANDOS : COMANDO SEMI COMANDOS
                     | '''
         if len(p) == 4:
             comando = p[1]
-            _comando = p[3]
-            p[0] = ASTNode('COMANDOS', children=[comando, _comando])
+            comandos = p[3]
+            p[0] = ASTNode('COMANDOS', children=[comando, comandos])
         else:
             p[0] = ASTNode('COMANDOS')
-
-    def p__comando(self, p):
-        '''_COMANDO : COMANDO SEMI _COMANDO
-                    | '''
-        if len(p) == 4:
-            comando = p[1]
-            _comando = p[3]
-            p[0] = ASTNode('_COMANDO', children=[comando, _comando])
-        else:
-            p[0] = ASTNode('_COMANDO')
 
     def p_comando(self, p):
         '''COMANDO : ATRIBUICAO
@@ -221,13 +201,13 @@ class SyntaxAnalyzer:
             p[0] = ASTNode('_TERMO')
 
     def p_fator(self, p):
-        '''FATOR : MENOS FATOR %prec UMINUS
+        '''FATOR : MENOS FATOR
                  | NUM
                  | ID
                  | LPAREN EXPR RPAREN'''
         if len(p) == 3:
             fator = p[2]
-            minus = ASTNode('UMINUS', children=[fator])
+            minus = ASTNode('MENOS', children=[fator])
             p[0] = ASTNode('FATOR', children=[minus])
 
         elif len(p) == 2:
@@ -283,19 +263,24 @@ class SyntaxAnalyzer:
                         | BOOL'''
         if len(p) == 4:
             # lparen expr_logica rparen
-            p[0] = p[2]
+            expr_logica = p[2]
+            p[0] = ASTNode('FATOR_LOGICO', children=[expr_logica])
         
         elif len(p) == 3:
             # not
             fator_logico = p[2]
-            p[0] = ASTNode('NOT', children=[fator_logico])
+            not_node = ASTNode('NOT', children=[fator_logico])
+            p[0] = ASTNode('FATOR_LOGICO', children=[not_node])
         else :
             if isinstance(p[1], ASTNode):
-                p[0] = p[1]
+                relacional = p[1]
+                p[0] = ASTNode('FATOR_LOGICO', children=[relacional])
             elif isinstance(p[1], bool):
-                p[0] = ASTNode('BOOL', value=p[1])
+                bool_node = ASTNode('BOOL', value=p[1])
+                p[0] = ASTNode('FATOR_LOGICO', children=[bool_node])
             else:
-                p[0] = ASTNode('ID', value=p[1])
+                id_node = ASTNode('ID', value=p[1])
+                p[0] = ASTNode('FATOR_LOGICO', children=[id_node])
 
     def p_relacional(self, p):
         '''RELACIONAL : EXPR OP_REL EXPR'''
@@ -315,9 +300,11 @@ class SyntaxAnalyzer:
 
     def p_error(self, p):
         if p:
-            raise SyntaxError(f"Erro de syntaxe na linha {getattr(p, 'lineno', '?')}: token '{getattr(p, 'value', '?')}' tipo '{getattr(p, 'type', '?')}'")
+            print(f"Erro de syntaxe na linha {getattr(p, 'lineno', '?')}: token '{getattr(p, 'value', '?')}' tipo '{getattr(p, 'type', '?')}'")
+            exit()
         else:
-            raise SyntaxError("Erro de syntaxe: final inesperado do arquivo")
+            print("Erro de syntaxe: final inesperado do arquivo")
+            exit()
 
 # Adaptador para lista de tokens (PLY espera um lexer com método token())
 class TokenListLexer:

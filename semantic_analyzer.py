@@ -1,3 +1,5 @@
+import inspect
+
 class SemanticNode:
     def __init__(self, type_, children=None, value=None, action=None):
         self.type = type_
@@ -130,8 +132,10 @@ class SemanticAnalyzer:
         return SemanticNode('COMPOSTO', children, action=action)
 
     def _visit_comandos(self, node):
-        [comando, _comando] = node.children
-        children = [self._visit(comando), self._visit(_comando)]
+        if len(node.children) == 0:
+            return SemanticNode('COMANDOS')
+        [comando, comandos] = node.children
+        children = [self._visit(comando), self._visit(comandos)]
         def action():
             res1 = children[0].action()
             res2 = children[1].action()
@@ -143,14 +147,8 @@ class SemanticAnalyzer:
         children = [self._visit(comando)]
         def action():
             res = children[0].action()
+            return res
         return SemanticNode('COMANDO', children, action=action)
-
-    def _visit__comando(self, node):
-        children = []
-        if len(node.children) == 2:
-            [comando, _comando] = node.children
-            children = [self._visit(comando), self._visit(_comando)]
-        return SemanticNode('_COMANDO', children)
 
     def _visit_atribuicao(self, node):
         [id_node, expr] = node.children
@@ -166,7 +164,7 @@ class SemanticAnalyzer:
             self.errors.append(f"Atribuição incompatível: variável '{var}' é do tipo '{table_type}' mas expressão é do tipo '{expr_type}'.")
         def action():
             value = children[1].action()
-            self.symbol_table[var] = (table_type, value)
+            self.symbol_table[var] = (table_type, value)           
             return value
         return SemanticNode('ATRIBUICAO', children=children, action=action)
 
@@ -217,8 +215,6 @@ class SemanticAnalyzer:
         children = [self._visit(item), self._visit(_item)]
         def action():
             val = children[0].action()
-            if children[0].type == 'ID':
-                (_, val) = self.symbol_table[val]
             items = [val] + children[1].action()
             return ' '.join([ f'{i}' for i in items ])
                 
@@ -235,8 +231,6 @@ class SemanticAnalyzer:
         children = [self._visit(item), self._visit(_item)]
         def action():
             val = children[0].action()
-            if children[0].type == 'ID':
-                (_, val) = self.symbol_table[val]
             items = [val] + children[1].action()
             return items
         
@@ -246,15 +240,29 @@ class SemanticAnalyzer:
         # node.value pode ser 'SE' ou 'SE_SENAO'
         cond = self._visit(node.children[0])
         bloco_se = self._visit(node.children[1])
+
         if node.value == 'SE_SENAO':
+            def action():
+                
+                if cond.action():
+                    bloco_se.action()
+                else:
+                    bloco_senao.action()
             bloco_senao = self._visit(node.children[2])
-            return SemanticNode('CONDICIONAL', [cond, bloco_se, bloco_senao], 'SE_SENAO')
-        return SemanticNode('CONDICIONAL', [cond, bloco_se], 'SE')
+            return SemanticNode('CONDICIONAL', children=[cond, bloco_se, bloco_senao], value='SE_SENAO', action=action)
+        def action():
+            if cond.action():
+                bloco_se.action()
+        return SemanticNode('CONDICIONAL', children=[cond, bloco_se], value='SE', action=action)
 
     def _visit_repeticao(self, node):
         cond = self._visit(node.children[0])
         bloco = self._visit(node.children[1])
-        return SemanticNode('REPETICAO', [cond, bloco])
+
+        def action():
+            while cond.action():
+                bloco.action()
+        return SemanticNode('REPETICAO', [cond, bloco], action=action)
 
     def _visit_expr(self, node):
         [termo, _expr] = node.children
@@ -287,7 +295,6 @@ class SemanticAnalyzer:
             if _expr.value == '+':
                 termo = children[0].action() 
                 expr = children[1].action()
-                print(termo + expr)
                 return termo + expr
             elif _expr.value == '-':
                 termo = children[0].action() 
@@ -304,12 +311,12 @@ class SemanticAnalyzer:
         children = [self._visit(termo), self._visit(_expr)]
 
         def action():
+            
+            termo = children[0].action() 
             if children[1].value == '||':
-                termo = children[0].action() 
                 expr = children[1].action()
                 return termo or expr
             else:
-                termo = children[0].action()
                 return termo
 
         return SemanticNode('EXPR_LOGICA', children, action=action)
@@ -338,26 +345,25 @@ class SemanticAnalyzer:
         [fator, _termo] = node.children
         children = [self._visit(fator), self._visit(_termo)]
         def action():
-            if _termo.value == '&&':    
-                fator = children[0].action()
+            fator = children[0].action()
+            if _termo.value == '&&':
                 termo = children[1].action()
                 res = fator and termo
                 return res
             else:
-                res = children[0].action()
-                return res
+                return fator
 
         return SemanticNode('TERMO_LOGICO', children, value=node.value, action=action)
 
     def _visit__termo_logico(self, node):
         if len(node.children) == 0:
-            def action():
-                return 1
-            return SemanticNode('_TERMO_LOGICO', [], action=action, value=node.value)
+            return SemanticNode('_TERMO_LOGICO')
         [fator, _termo] = node.children
+        
         children = [self._visit(fator), self._visit(_termo)]
 
         def action():
+            
             if _termo.value == '&&':
                 return children[0].action() and children[1].action()
             else:
@@ -366,33 +372,35 @@ class SemanticAnalyzer:
         return SemanticNode('_TERMO_LOGICO', children, action=action, value=node.value)
 
     def _visit_fator_logico(self, node):
-        children = [self._visit(node.children[0])]
         
-        def action():
-            if children[0].type == 'ID':
-                if children[0].value not in self.symbol_table:
-                    self.errors.append(f"Variável '{children[0].value}' não declarada.")
-                (_, value) = self.symbol_table[children[0].value]
+
+        children = [self._visit(node.children[0])]
+        if children[0].type == 'ID':
+            
+            def action():
+                value = children[0].action()
                 return value
-            if children[0].type == 'BOOL':
+
+            return SemanticNode('ID', value=children[0].value, action=action)
+        
+        if children[0].type == 'BOOL':
+            def action():
                 return children[0].value
+            return SemanticNode('BOOL', value=children[0].value, action=action)
+
+        if children[0].type == 'NOT':
+            def action():
+                return not children[0].action()
+            return SemanticNode('NOT', children, action=action)
+        def action():
             child_res = children[0].action()
-            if children[0].type == 'NOT':
-                return not child_res
-
-            # FATOR_LOGICO | RELACIONAL
             return child_res
-                
-            
-
-            
-        return SemanticNode('FATOR_LOGICO', children, action=action, value=node.value)
+        # FATOR_LOGICO | RELACIONAL
+        return SemanticNode(children[0].type, children=children, action=action)
 
     def _visit_relacional(self, node):
-        # falta implementar esta caralha em diante pro tipo logico funcionar
         [expr1, expr2] = node.children
         children = [self._visit(expr1), self._visit(expr2)]
-
         def action():
             if node.value == '<':
                 termo = children[0].action()
@@ -410,10 +418,16 @@ class SemanticAnalyzer:
                 termo = children[0].action() 
                 expr = children[1].action()
                 return termo >= expr
+            elif node.value == '<>':
+                termo = children[0].action() 
+                expr = children[1].action()
+                return termo != expr
+            elif node.value == '=':
+                termo = children[0].action() 
+                expr = children[1].action()
+                return termo == expr
 
         return SemanticNode('EXPR', children, action=action)
-
-
 
     def _visit_termo(self, node):
         if len(node.children) == 0:
@@ -431,7 +445,8 @@ class SemanticAnalyzer:
             elif _termo.value == '/':
                 fator = children[0].action()
                 termo = children[1].action()
-                res = fator / termo
+                res = fator // termo
+
                 return res
             else:
                 res = children[0].action()
@@ -461,14 +476,14 @@ class SemanticAnalyzer:
         children = [self._visit(node.children[0])]
         child_type = children[0].type
 
-        if child_type == 'UMINUS':
+        if child_type == 'MENOS':
             def action():
                 return -children[0].action()
-            return SemanticNode('UMINUS', children, action=action)
+            return SemanticNode('MENOS', children, action=action)
         if child_type == 'NUM':
             def action():
                 return int(children[0].value)
-            return SemanticNode('NUM', action=action)
+            return SemanticNode('NUM', value=int(children[0].value), action=action)
         if child_type == 'ID':
             if children[0].value not in self.symbol_table:
                 self.errors.append(f"Variável '{children[0].value}' não declarada.")
@@ -486,11 +501,28 @@ class SemanticAnalyzer:
             return children[0].action()
         return SemanticNode(children[0].type, children, action=action, value=node.value)
 
-    def _visit_uminus(self, node):
+    def _visit_menos(self, node):
         children = [self._visit(node.children[0])]
         def action():
             return children[0].action()
-        return SemanticNode('UMINUS', action=action)
+        return SemanticNode('MENOS', action=action)
 
     def _visit_op_rel(self, node):
         return SemanticNode('OP_REL', value=node.value)
+
+    def _visit_id(self, node):
+        value = node.value
+        def action():
+            if value not in self.symbol_table:
+                self.errors.append(f"Variável '{value}' não declarada.")
+            (_, table_value) = self.symbol_table[value]
+            return table_value
+
+        return SemanticNode('ID', value=node.value, action=action)
+    
+    def _visit_num(self, node):
+        value = node.value
+        def action():
+            return value
+
+        return SemanticNode('NUM', value=node.value, action=action)

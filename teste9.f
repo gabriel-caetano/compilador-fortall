@@ -1,8 +1,9 @@
 programa aninhamento;
 var x, y: inteiro;
 inicio
-    x := 2;
+    x := 5;
     y := 3;
+    Escrever(x <> 5);
     se x < y entao
         se y < 10 entao
             Escrever("y menor que 10");

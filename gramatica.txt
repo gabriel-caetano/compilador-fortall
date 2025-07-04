@@ -9,9 +9,8 @@ Gramática escrita
 <_ID>		    -> , <ID> <_ID> | ε
 
 <COMPOSTO>	    -> inicio <COMANDOS> fim
-<COMANDOS>	    -> <COMANDO>; <_COMANDO> | ε
+<COMANDOS>	    -> <COMANDO>; <COMANDOS> | ε
 <COMANDO>	    -> <ATRIBUICAO> | <LEITURA> | <ESCRITA> | <COMPOSTO> | <CONDICIONAL> | <REPETICAO>
-<_COMANDO>      -> <COMANDO>; <_COMANDO> | ε
 
 <ATRIBUICAO>	-> id := <EXPR> | id := <EXPR_LOGICA>
 <LEITURA>	    -> Ler(<ID>)

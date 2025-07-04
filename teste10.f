@@ -1,10 +1,11 @@
 programa logico_not;
 var a: logico;
 inicio
-    a := falso;
+    a := verdadeiro;
+    
     se !a entao
-        Escrever("a é falso");
-    senao
         Escrever("a é verdadeiro");
+    senao
+        Escrever("a é falso");
     fim;
 fim.
